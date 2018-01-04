@@ -36,13 +36,13 @@ class RentSeeker(object):
                 if  int(post.created_utc) > self.init_time and str(post) not in self.tracked:
                     self.post_comment(post)
         except prawcore.exceptions.ServerError:
-            self.logger.error("Server error, sleeping for 1 minute")
+            self.logger.error("Server error: Sleeping for 1 minute.")
             sleep(60)
         except prawcore.exceptions.ResponseException:
-            self.logger.error("Response error, sleeping for 1 minute")
+            self.logger.error("Response error: Sleeping for 1 minute.")
             sleep(60)
         except prawcore.exceptions.RequestException:
-            self.logger.error("Request error, sleeping for 1 minute")
+            self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
         for comment in self.tracked.values():
