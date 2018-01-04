@@ -1,5 +1,5 @@
 """main class"""
-from typing import List
+from typing import Dict
 import logging
 
 import praw
@@ -19,7 +19,7 @@ class RentSeeker(object):
         self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
-        self.tracked: List[praw.models.Comment] = list()
+        self.tracked: Dict[str, praw.models.Comment] = dict()
         self.init_time: int = start_time()
         self.logger.debug("Start time is \"%s\"", self.init_time)
         self.logger.info("Successfully initialized")
@@ -31,10 +31,10 @@ class RentSeeker(object):
             if post is None:
                 self.logger.debug("None found, skipping")
                 break
-            if  int(post.created_utc) > self.init_time:
+            if  int(post.created_utc) > self.init_time and str(post) not in self.tracked:
                 self.post_comment(post)
 
-        for comment in self.tracked:
+        for comment in self.tracked.values():
             comment.refresh()
             if comment.replies.__len__() is not 0:
                 self.logger.debug("Removing found comment replies")
@@ -58,8 +58,7 @@ class RentSeeker(object):
         comment: praw.models.Comment = discussion_thread.reply(body)
         self.logger.debug("Posted comment")
 
-        self.tracked.append(comment)
-        self.logger.debug(self.tracked)
+        self.tracked[str(post)] = comment
         return
 
     def _get_discussion_thread(self) -> praw.models.Submission:
