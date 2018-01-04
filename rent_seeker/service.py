@@ -4,11 +4,10 @@ import sys
 
 import praw
 
-sys.path.append('../')
-from .rent_seeker import RentSeeker
-
 def main() -> None:
     """main service function"""
+    sys.path.append("../")
+    from .rent_seeker import RentSeeker
 
     reddit: praw.Reddit = praw.Reddit(
         client_id=os.environ["client_id"],
