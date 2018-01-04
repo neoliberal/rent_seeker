@@ -49,8 +49,9 @@ class RentSeeker(object):
     def post_comment(self, post: praw.models.Submission) -> None:
         """posts comment in discussion thread"""
         discussion_thread: praw.models.Submission = self._get_discussion_thread()
-        body: str = "\n".join([
+        body: str = "".join([
             f"New Post in [/new](/r/{self.subreddit}/new): [{post.title}]({post.permalink})",
+            ""
             "*Replies to this comment will be removed, please participate in the linked thread*"
         ])
 
@@ -59,6 +60,7 @@ class RentSeeker(object):
         self.logger.debug("Posted comment")
 
         self.tracked[str(post)] = comment
+        self.logger.debug("Added \"%s\" to tracked comments", comment)
         return
 
     def _get_discussion_thread(self) -> praw.models.Submission:
