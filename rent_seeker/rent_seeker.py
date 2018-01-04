@@ -2,12 +2,12 @@
 
 import praw
 
-class Crosspost(object):
+class RentSeeker(object):
     """crossposts /new into discussion thread"""
     __slots__ = ["reddit", "subreddit"]
 
     def __init__(self, reddit: praw.Reddit, subreddit: str) -> None:
-        """initialize crossposter"""
+        """initialize rentseeker"""
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
 
@@ -20,7 +20,6 @@ class Crosspost(object):
             return int(timegm(datetime.utcnow().utctimetuple()))
 
         start: int = start_time()
-        print(start)
         for post in self.subreddit.stream.submissions():
             if  int(post.created_utc) > start:
                 self.post_comment(post)
