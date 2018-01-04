@@ -16,6 +16,7 @@ class RentSeeker(object):
             from calendar import timegm
             from datetime import datetime
             return int(timegm(datetime.utcnow().utctimetuple()))
+
         self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
