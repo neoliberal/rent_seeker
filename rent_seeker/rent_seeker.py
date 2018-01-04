@@ -50,7 +50,7 @@ class RentSeeker(object):
             if comment.replies.__len__() is not 0:
                 self.logger.debug("Removing found comment replies")
                 for subcomment in comment.replies.list():
-                    self._get_moderator().remove(subcomment)
+                    subcomment.mod.remove()
                 self.logger.debug("Removed comment replies")
 
         return
@@ -80,7 +80,3 @@ class RentSeeker(object):
                 self.logger.debug("Found discussion thread")
                 return submission
         self.logger.error("Could not find discussion thread")
-
-    def _get_moderator(self) -> praw.models.reddit.submission.SubmissionModeration:
-        """returns discussion thread moderator commands"""
-        return self._get_discussion_thread().mod
