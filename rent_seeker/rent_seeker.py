@@ -28,16 +28,21 @@ class RentSeeker(object):
     def listen(self) -> None:
         """listens to subreddit's posts"""
         import prawcore
+        from time import sleep
         try:
             for post in self.subreddit.stream.submissions(pause_after=3):
                 if post is None:
-                    self.logger.debug("None found, skipping")
                     break
                 if  int(post.created_utc) > self.init_time and str(post) not in self.tracked:
                     self.post_comment(post)
         except prawcore.exceptions.ServerError:
             self.logger.error("Server error, sleeping for 1 minute")
-            from time import sleep
+            sleep(60)
+        except prawcore.exceptions.ResponseException:
+            self.logger.error("Response error, sleeping for 1 minute")
+            sleep(60)
+        except prawcore.exceptions.RequestException:
+            self.logger.error("Request error, sleeping for 1 minute")
             sleep(60)
 
         for comment in self.tracked.values():
@@ -47,7 +52,7 @@ class RentSeeker(object):
                 for subcomment in comment.replies.list():
                     self._get_moderator().remove(subcomment)
                 self.logger.debug("Removed comment replies")
-            
+
         return
 
     def post_comment(self, post: praw.models.Submission) -> None:
