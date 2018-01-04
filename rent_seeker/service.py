@@ -1,8 +1,10 @@
 """service file"""
 import os
+import sys
 
 import praw
 
+sys.path.append('../')
 from .rent_seeker import RentSeeker
 
 def main() -> None:
