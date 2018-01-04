@@ -35,7 +35,8 @@ class RentSeeker(object):
                 self.post_comment(post)
 
         for comment in self.tracked:
-            if comment.replies:
+            comment.refresh()
+            if comment.replies.__len__() is not 0:
                 self.logger.debug("Removing found comment replies")
                 moderator: praw.models.reddit.submission.SubmissionModeration = (
                     self._get_discussion_thread().mod
