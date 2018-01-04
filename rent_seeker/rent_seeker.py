@@ -28,7 +28,7 @@ class RentSeeker(object):
         start: int = start_time()
         self.logger.debug("Start time is \"%s\"", start)
         for post in self.subreddit.stream.submissions(pause_after=3):
-            logger.debug(post)
+            self.logger.debug(post)
             if  int(post.created_utc) > start:
                 self.post_comment(post)
 
