@@ -7,31 +7,31 @@ from slack_python_logging import slack_logger
 
 class RentSeeker(object):
     """crossposts /new into discussion thread"""
-    __slots__ = ["logger", "reddit", "subreddit", "tracked"]
+    __slots__ = ["logger", "reddit", "subreddit", "init_time", "tracked"]
 
     def __init__(self, reddit: praw.Reddit, subreddit: str) -> None:
         """initialize rentseeker"""
-        self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
-        self.reddit: praw.Reddit = reddit
-        self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
-        self.tracked: List[praw.models.Comment] = list()
-        self.logger.info("Successfully initialized")
-
-    def listen(self) -> None:
-        """listens to subreddit's posts"""
         def start_time() -> int:
             """returns start time of function"""
             from calendar import timegm
             from datetime import datetime
             return int(timegm(datetime.utcnow().utctimetuple()))
+        self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
+        self.reddit: praw.Reddit = reddit
+        self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
+        self.tracked: List[praw.models.Comment] = list()
+        self.init_time: int = start_time()
+        self.logger.debug("Start time is \"%s\"", self.init_time)
+        self.logger.info("Successfully initialized")
 
-        start: int = start_time()
-        self.logger.debug("Start time is \"%s\"", start)
+    def listen(self) -> None:
+        """listens to subreddit's posts"""
+
         for post in self.subreddit.stream.submissions(pause_after=3):
             if post is None:
                 self.logger.debug("None found, skipping")
                 break
-            if  int(post.created_utc) > start:
+            if  int(post.created_utc) > self.init_time:
                 self.post_comment(post)
 
         for comment in self.tracked:
@@ -40,7 +40,7 @@ class RentSeeker(object):
                 moderator: praw.models.reddit.submission.SubmissionModeration = (
                     self._get_discussion_thread().mod
                 )
-                for subcomment in comment.replies:
+                for subcomment in comment.replies.list():
                     moderator.remove(subcomment)
                 self.logger.debug("Removed comment replies")
         return
@@ -58,6 +58,7 @@ class RentSeeker(object):
         self.logger.debug("Posted comment")
 
         self.tracked.append(comment)
+        self.logger.debug(self.tracked)
         return
 
     def _get_discussion_thread(self) -> praw.models.Submission:
