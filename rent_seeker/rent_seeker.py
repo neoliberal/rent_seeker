@@ -20,7 +20,7 @@ class RentSeeker(object):
             return int(timegm(datetime.utcnow().utctimetuple()))
 
         start: int = start_time()
-        for post in self.subreddit.stream.submissions():
+        for post in self.subreddit.stream.submissions(pause_after=3):
             if  int(post.created_utc) > start:
                 self.post_comment(post)
         return
