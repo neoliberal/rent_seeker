@@ -29,6 +29,7 @@ class RentSeeker(object):
         self.logger.debug("Start time is \"%s\"", start)
         for post in self.subreddit.stream.submissions(pause_after=3):
             if post is None:
+                self.logger.debug("None found, skipping")
                 break
             if  int(post.created_utc) > start:
                 self.post_comment(post)
