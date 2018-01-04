@@ -1,0 +1,13 @@
+[Unit]
+Description=RentSeeker
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3.6 /var/lib/rent_seeker/rent_seeker/service.py
+User=admin
+WorkingDirectory=/var/lib/rent_seeker/rent_seeker
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
