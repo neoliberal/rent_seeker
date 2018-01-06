@@ -29,6 +29,7 @@ class RentSeeker(object):
         """listens to subreddit's posts"""
         import prawcore
         from time import sleep
+        from datetime import datetime
         try:
             for post in self.subreddit.stream.submissions(pause_after=3):
                 if post is None:
@@ -45,7 +46,7 @@ class RentSeeker(object):
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
-        for comment in self.tracked.values():
+        for post, comment in self.tracked.items():
             comment.refresh()
             if len(comment.replies) is not 0:
                 self.logger.debug("Removing found comment replies")
@@ -54,6 +55,9 @@ class RentSeeker(object):
                         continue
                     subcomment.mod.remove()
                 self.logger.debug("Removed comment replies")
+            if (datetime.utcnow() - datetime.utcfromtimestamp(comment.created_utc)).days >= 1:
+                self.logger.debug("No longer tracking comment \"%s\"", str(comment))
+                del self.tracked[post]
 
         return
 
