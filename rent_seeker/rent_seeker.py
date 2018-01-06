@@ -47,7 +47,7 @@ class RentSeeker(object):
 
         for comment in self.tracked.values():
             comment.refresh()
-            if comment.replies.__len__() is not 0:
+            if len(comment.replies) is not 0:
                 self.logger.debug("Removing found comment replies")
                 for subcomment in comment.replies.list():
                     if subcomment.banned_by == str(self.reddit.user.me()):
