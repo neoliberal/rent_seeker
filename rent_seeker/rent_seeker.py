@@ -29,7 +29,7 @@ class RentSeeker(object):
     def load(self) -> Dict[str, praw.models.Comment]:
         """loads pickle if it exists"""
         self.logger.debug("Loading pickle file")
-        with open("tracked_comments.pkl", 'rb') as pickled_file:
+        with open("tracked_comments.pkl", 'rb+') as pickled_file:
             try:
                 tracked: Dict[str, praw.models.Comment] = pickle.loads(pickled_file.read())
                 self.logger.debug("Loaded pickle file")
