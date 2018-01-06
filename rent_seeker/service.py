@@ -3,9 +3,13 @@ import os
 
 import praw
 
+try:
+    from rent_seeker import RentSeeker
+except ModuleNotFoundError:
+    from .rent_seeker import RentSeeker
+
 def main() -> None:
     """main service function"""
-    from rent_seeker import RentSeeker
 
     reddit: praw.Reddit = praw.Reddit(
         client_id=os.environ["client_id"],
