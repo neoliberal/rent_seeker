@@ -35,7 +35,7 @@ class RentSeeker(object):
                 self.logger.debug("Loaded pickle file")
                 return tracked
             except EOFError:
-                self.logger.debug("No pickle found, returning blank pickle")
+                self.logger.debug("No pickle found, returning blank dictionary")
                 return {}
 
     def save(self) -> None:
