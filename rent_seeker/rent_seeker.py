@@ -76,7 +76,7 @@ class RentSeeker(object):
                     subcomment.mod.remove()
                 self.logger.debug("Removed comment replies")
             if (datetime.utcnow() - datetime.utcfromtimestamp(comment.created_utc)).days >= 1:
-                self.logger.debug("No longer tracking comment \"%s\"", str(comment))
+                self.logger.debug("No longer tracking comment \"%s\", over a day old", str(comment))
                 del self.tracked[post]
 
         return
