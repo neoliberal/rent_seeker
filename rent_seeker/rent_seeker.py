@@ -31,9 +31,12 @@ class RentSeeker(object):
 
     def exit(self, signum: int, frame) -> None:
         """defines exit function"""
+        import os
         _ = frame
         self.save()
         self.logger.info("Exited gracefully with signal %s", signum)
+        os._exit()
+        return
 
     def load(self) -> Dict[str, praw.models.Comment]:
         """loads pickle if it exists"""
