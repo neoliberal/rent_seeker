@@ -1,12 +1,10 @@
 """service file"""
 import os
-import sys
 
 import praw
 
 def main() -> None:
     """main service function"""
-    sys.path.append("../")
     from rent_seeker import RentSeeker
 
     reddit: praw.Reddit = praw.Reddit(
