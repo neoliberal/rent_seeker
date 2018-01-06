@@ -1,4 +1,5 @@
 """main class"""
+from pathlib import Path
 import pickle
 import logging
 from typing import Dict
@@ -29,7 +30,9 @@ class RentSeeker(object):
     def load(self) -> Dict[str, praw.models.Comment]:
         """loads pickle if it exists"""
         self.logger.debug("Loading pickle file")
-        with open("tracked_comments.pkl", 'xb') as pickled_file:
+        tracked_file: Path = Path("tracked_comments.pkl")
+        tracked_file.touch()
+        with tracked_file.open('rb') as pickled_file:
             try:
                 tracked: Dict[str, praw.models.Comment] = pickle.loads(pickled_file.read())
                 self.logger.debug("Loaded pickle file")
@@ -41,7 +44,8 @@ class RentSeeker(object):
     def save(self) -> None:
         """pickles tracked comments after shutdown"""
         self.logger.debug("Saving pickle file")
-        with open("tracked_comments.pkl", 'wb') as pickled_file:
+        tracked_file: Path = Path("tracked_comments.pkl")
+        with tracked_file.open('wb') as pickled_file:
             pickled_file.write(pickle.dumps(self.tracked))
             self.logger.debug("Saved pickle file")
 
