@@ -1,6 +1,7 @@
 """main class"""
-from typing import Dict
+import pickle
 import logging
+from typing import Dict
 
 import praw
 from slack_python_logging import slack_logger
@@ -20,10 +21,29 @@ class RentSeeker(object):
         self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
-        self.tracked: Dict[str, praw.models.Comment] = dict()
+        self.tracked: Dict[str, praw.models.Comment] = self.load()
         self.init_time: int = start_time()
         self.logger.debug("Start time is \"%s\"", self.init_time)
         self.logger.info("Successfully initialized")
+
+    def load(self) -> Dict[str, praw.models.Comment]:
+        """loads pickle if it exists"""
+        self.logger.debug("Loading pickle file")
+        with open("tracked_comments.pkl", 'rb') as pickled_file:
+            try:
+                tracked: Dict[str, praw.models.Comment] = pickle.loads(pickled_file.read())
+                self.logger.debug("Loaded pickle file")
+                return tracked
+            except EOFError:
+                self.logger.debug("No pickle found, returning blank pickle")
+                return {}
+
+    def save(self) -> None:
+        """pickles tracked comments after shutdown"""
+        self.logger.debug("Saving pickle file")
+        with open("tracked_comments.pkl", 'wb') as pickled_file:
+            pickled_file.write(pickle.dumps(self.tracked))
+            self.logger.debug("Saved pickle file")
 
     def listen(self) -> None:
         """listens to subreddit's posts"""
