@@ -35,7 +35,7 @@ class RentSeeker(object):
         _ = frame
         self.save()
         self.logger.info("Exited gracefully with signal %s", signum)
-        os._exit()
+        os._exit(os.EX_OK)
         return
 
     def load(self) -> Dict[str, praw.models.Comment]:
