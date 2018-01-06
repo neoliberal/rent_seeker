@@ -73,12 +73,11 @@ class RentSeeker(object):
         for post, comment in self.tracked.items():
             comment.refresh()
             if len(comment.replies) is not 0:
-                self.logger.debug("Removing found comment replies")
                 for subcomment in comment.replies.list():
                     if subcomment.banned_by == str(self.reddit.user.me()):
                         continue
                     subcomment.mod.remove()
-                self.logger.debug("Removed comment replies")
+                    self.logger.debug("Removed comment reply")
             if (datetime.utcnow() - datetime.utcfromtimestamp(comment.created_utc)).days >= 1:
                 self.logger.debug("No longer tracking comment \"%s\", over a day old", str(comment))
                 del self.tracked[post]
