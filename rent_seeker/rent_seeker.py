@@ -47,6 +47,7 @@ class RentSeeker(object):
             try:
                 tracked: Dict[str, praw.models.Comment] = pickle.loads(pickled_file.read())
                 self.logger.debug("Loaded pickle file")
+                self.logger.debug("Contents: %s", str(tracked))
                 return tracked
             except EOFError:
                 self.logger.debug("No pickle found, returning blank dictionary")
