@@ -3,6 +3,7 @@ from pathlib import Path
 import pickle
 import logging
 from typing import Dict
+import signal
 
 import praw
 from slack_python_logging import slack_logger
@@ -24,8 +25,15 @@ class RentSeeker(object):
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
         self.tracked: Dict[str, praw.models.Comment] = self.load()
         self.init_time: int = start_time()
+        signal.signal(signal.SIGTERM, self.exit)
         self.logger.debug("Start time is \"%s\"", self.init_time)
         self.logger.info("Successfully initialized")
+
+    def exit(self, signum: int, frame) -> None:
+        """defines exit function"""
+        _ = frame
+        self.save()
+        self.logger.info("Exited gracefully with signal %s", signum)
 
     def load(self) -> Dict[str, praw.models.Comment]:
         """loads pickle if it exists"""
