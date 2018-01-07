@@ -90,7 +90,7 @@ class RentSeeker(object):
             sleep(60)
 
         from datetime import datetime, timedelta
-        for post, comment in self.tracked.items():
+        for post, comment in self.tracked.copy().items():
             comment.refresh()
             if len(comment.replies) is not 0:
                 for subcomment in comment.replies.list():
