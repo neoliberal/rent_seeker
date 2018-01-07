@@ -89,7 +89,7 @@ class RentSeeker(object):
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
-        from datetime import datetime
+        from datetime import datetime, timedelta
         for post, comment in self.tracked.items():
             comment.refresh()
             if len(comment.replies) is not 0:
@@ -98,9 +98,9 @@ class RentSeeker(object):
                         continue
                     subcomment.mod.remove()
                     self.logger.debug("Removed comment reply")
-            if (
-                    datetime.utcnow() - datetime.utcfromtimestamp(comment.created_utc)
-            ).total_seconds() > 60 * 60 * 24:
+            delta: timedelta = datetime.utcnow() - datetime.utcfromtimestamp(comment.created_utc)
+            self.logger.debug("Comment delta is %s", delta)
+            if delta.total_seconds() > 60 * 60 * 24:
                 self.logger.debug("No longer tracking comment \"%s\", over a day old", str(comment))
                 del self.tracked[post]
 
