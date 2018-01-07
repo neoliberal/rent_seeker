@@ -63,14 +63,21 @@ class RentSeeker(object):
 
     def listen(self) -> None:
         """listens to subreddit's posts"""
+        def filter_post(post: praw.models.Submission) -> bool:
+            """filters post based on criteria"""
+            if post.title == "Discussion Thread":
+                return False
+            return True
+
         import prawcore
         from time import sleep
-        from datetime import datetime
         try:
             for post in self.subreddit.stream.submissions(pause_after=3):
                 if post is None:
                     break
-                if  int(post.created_utc) > self.init_time and str(post) not in self.tracked:
+                if  (int(post.created_utc) > self.init_time
+                     and str(post) not in self.tracked and filter_post(post)
+                    ):
                     self.post_comment(post)
         except prawcore.exceptions.ServerError:
             self.logger.error("Server error: Sleeping for 1 minute.")
@@ -82,6 +89,7 @@ class RentSeeker(object):
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
+        from datetime import datetime
         for post, comment in self.tracked.items():
             comment.refresh()
             if len(comment.replies) is not 0:
