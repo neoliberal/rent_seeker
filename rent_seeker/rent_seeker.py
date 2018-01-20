@@ -1,5 +1,4 @@
 """main class"""
-from pathlib import Path
 import pickle
 import logging
 from typing import Deque, Tuple
@@ -45,27 +44,28 @@ class RentSeeker(object):
     def load(self) -> Deque[Tuple[str, str]]:
         """loads pickle if it exists"""
         self.logger.debug("Loading pickle file")
-        tracked_file: Path = Path("tracked_comments.pkl")
-        tracked_file.touch()
-        with tracked_file.open('rb') as pickled_file:
-            try:
-                tracked: Deque[Tuple[str, str]] = pickle.loads(pickled_file.read())
-                self.logger.debug("Loaded pickle file")
-                self.logger.debug("Current length: %s", len(tracked))
-                if tracked.maxlen != 250:
-                    self.logger.warning("Deque has invalid max length, returning new one")
-                    return Deque(tracked, maxlen=250)
-                self.logger.debug("Contents: %s", str(tracked))
-                return tracked
-            except EOFError:
-                self.logger.debug("No pickle found, returning blank dictionary")
-                return Deque(maxlen=250)
+        try:
+            with open("tracked_comments.pkl", 'rb') as pickled_file:
+                try:
+                    tracked: Deque[Tuple[str, str]] = pickle.loads(pickled_file.read())
+                    self.logger.debug("Loaded pickle file")
+                    self.logger.debug("Current length: %s", len(tracked))
+                    if tracked.maxlen != 250:
+                        self.logger.warning("Deque has invalid max length, returning new one")
+                        return Deque(tracked, maxlen=250)
+                    self.logger.debug("Contents: %s", str(tracked))
+                    return tracked
+                except EOFError:
+                    self.logger.debug("No pickle found, returning blank dictionary")
+                    return Deque(maxlen=250)
+        except FileNotFoundError:
+            self.logger.debug("Comment not found, returning empty deque")
+            return Deque(maxlen=250)
 
     def save(self) -> None:
         """pickles tracked comments after shutdown"""
         self.logger.debug("Saving pickle file")
-        tracked_file: Path = Path("tracked_comments.pkl")
-        with tracked_file.open('wb') as pickled_file:
+        with open("tracked_comments.pkl", 'wb') as pickled_file:
             pickled_file.write(pickle.dumps(self.tracked))
             self.logger.debug("Saved pickle file")
 
@@ -99,7 +99,8 @@ class RentSeeker(object):
             sleep(60)
 
         for reply in self.reddit.inbox.comment_replies():
-            if any(item for item in self.tracked if item[1] == str(reply.parent)):
+            if any(item for item in self.tracked
+                   if item[1] == str(reply.parent)):
                 reply.mod.remove()
                 self.logger.debug("Removed comment reply")
                 reply.mark_unread()
