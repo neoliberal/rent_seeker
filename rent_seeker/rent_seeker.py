@@ -106,7 +106,7 @@ class RentSeeker(object):
 
         for reply in self.reddit.inbox.unread():
             if (isinstance(reply, praw.models.Comment)
-                    and any(item for item in self.tracked if item.comment == str(reply.parent))
+                    and any(item for item in self.tracked if item.comment == str(reply.parent()))
                ):
                 reply.mod.remove()
                 self.logger.debug("Removed comment reply")
