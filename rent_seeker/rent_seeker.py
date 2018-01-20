@@ -90,7 +90,7 @@ class RentSeeker(object):
                 if post is None:
                     break
                 if  (int(post.created_utc) > self.init_time
-                     and any(item for item in self.tracked if item.post == str(post))
+                     and not any(item for item in self.tracked if item.post == str(post))
                      and filter_post(post)
                     ):
                     self.post_comment(post)
@@ -104,8 +104,10 @@ class RentSeeker(object):
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
-        for reply in self.reddit.inbox.comment_replies():
-            if any(item for item in self.tracked if item.comment == str(reply.parent)):
+        for reply in self.reddit.inbox.unread():
+            if (isinstance(reply, praw.models.Comment)
+                    and any(item for item in self.tracked if item.comment == str(reply.parent))
+               ):
                 reply.mod.remove()
                 self.logger.debug("Removed comment reply")
                 reply.mark_unread()
