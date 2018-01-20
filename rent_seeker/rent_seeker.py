@@ -64,6 +64,9 @@ class RentSeeker(object):
                 except EOFError:
                     self.logger.debug("No pickle found, returning blank dictionary")
                     return Deque(maxlen=250)
+                except pickle.UnpicklingError:
+                    self.logger.warning("Could not unpickle file, returning blank deque")
+                    return Deque(maxlen=250)
         except FileNotFoundError:
             self.logger.debug("Comment not found, returning empty deque")
             return Deque(maxlen=250)
