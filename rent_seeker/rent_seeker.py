@@ -20,12 +20,16 @@ class RentSeeker(object):
             from datetime import datetime
             return int(timegm(datetime.utcnow().utctimetuple()))
 
+        def register_signals() -> None:
+            """registers signals for systemd"""
+            signal.signal(signal.SIGTERM, self.exit)
+
         self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
         self.tracked: Deque[Tuple[str, str]] = self.load()
         self.init_time: int = start_time()
-        signal.signal(signal.SIGTERM, self.exit)
+        register_signals()
         self.logger.debug("Start time is \"%s\"", self.init_time)
         self.logger.info("Successfully initialized")
 
@@ -94,10 +98,8 @@ class RentSeeker(object):
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
-        for reply in self.reddit.inbox.unread():
-            if (isinstance(reply, praw.models.Comment)
-                    and any(item for item in self.tracked if item[1] == str(reply.parent))
-               ):
+        for reply in self.reddit.inbox.comment_replies():
+            if any(item for item in self.tracked if item[1] == str(reply.parent)):
                 reply.mod.remove()
                 self.logger.debug("Removed comment reply")
                 reply.mark_unread()
