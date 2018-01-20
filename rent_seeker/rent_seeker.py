@@ -44,7 +44,7 @@ class RentSeeker(object):
         _ = frame
         self.save()
         self.logger.info("Exited gracefully with signal %s", signum)
-        os._exit(os.EX_OK)
+        os._exit(os.EX_OK) #pylint: disable=W0212
         return
 
     def load(self) -> Deque[Holder]:
