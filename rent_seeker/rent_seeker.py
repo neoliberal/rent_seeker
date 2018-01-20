@@ -2,7 +2,7 @@
 from pathlib import Path
 import pickle
 import logging
-from typing import Dict
+from typing import Deque, Tuple
 import signal
 
 import praw
@@ -23,7 +23,7 @@ class RentSeeker(object):
         self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
-        self.tracked: Dict[str, praw.models.Comment] = self.load()
+        self.tracked: Deque[Tuple[str, str]] = self.load()
         self.init_time: int = start_time()
         signal.signal(signal.SIGTERM, self.exit)
         self.logger.debug("Start time is \"%s\"", self.init_time)
@@ -38,20 +38,24 @@ class RentSeeker(object):
         os._exit(os.EX_OK)
         return
 
-    def load(self) -> Dict[str, praw.models.Comment]:
+    def load(self) -> Deque[Tuple[str, str]]:
         """loads pickle if it exists"""
         self.logger.debug("Loading pickle file")
         tracked_file: Path = Path("tracked_comments.pkl")
         tracked_file.touch()
         with tracked_file.open('rb') as pickled_file:
             try:
-                tracked: Dict[str, praw.models.Comment] = pickle.loads(pickled_file.read())
+                tracked: Deque[Tuple[str, str]] = pickle.loads(pickled_file.read())
                 self.logger.debug("Loaded pickle file")
+                self.logger.debug("Current length: %s", len(tracked))
+                if tracked.maxlen != 250:
+                    self.logger.warning("Deque has invalid max length, returning new one")
+                    return Deque(tracked, maxlen=250)
                 self.logger.debug("Contents: %s", str(tracked))
                 return tracked
             except EOFError:
                 self.logger.debug("No pickle found, returning blank dictionary")
-                return {}
+                return Deque(maxlen=250)
 
     def save(self) -> None:
         """pickles tracked comments after shutdown"""
@@ -76,7 +80,8 @@ class RentSeeker(object):
                 if post is None:
                     break
                 if  (int(post.created_utc) > self.init_time
-                     and str(post) not in self.tracked and filter_post(post)
+                     and any(item for item in self.tracked if item[0] == str(post))
+                     and filter_post(post)
                     ):
                     self.post_comment(post)
         except prawcore.exceptions.ServerError:
@@ -89,19 +94,13 @@ class RentSeeker(object):
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
 
-        from datetime import datetime
-        for post, comment in self.tracked.items():
-            comment.refresh()
-            if len(comment.replies) is not 0:
-                for subcomment in comment.replies.list():
-                    if subcomment.banned_by == str(self.reddit.user.me()):
-                        continue
-                    subcomment.mod.remove()
-                    self.logger.debug("Removed comment reply")
-            if (datetime.utcnow() - datetime.utcfromtimestamp(comment.created_utc)).days >= 1:
-                self.logger.debug("No longer tracking comment \"%s\", over a day old", str(comment))
-                del self.tracked[post]
-
+        for reply in self.reddit.inbox.unread():
+            if (isinstance(reply, praw.models.Comment)
+                    and any(item for item in self.tracked if item[1] == str(reply.parent))
+               ):
+                reply.mod.remove()
+                self.logger.debug("Removed comment reply")
+                reply.mark_unread()
         return
 
     def post_comment(self, post: praw.models.Submission) -> None:
@@ -116,7 +115,7 @@ class RentSeeker(object):
         comment: praw.models.Comment = discussion_thread.reply(body)
         self.logger.debug("Posted comment")
 
-        self.tracked[str(post)] = comment
+        self.tracked.append((str(post), str(comment)))
         self.logger.debug("Added \"%s\" to tracked comments", comment)
         return
 
