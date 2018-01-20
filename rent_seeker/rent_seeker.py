@@ -1,11 +1,17 @@
 """main class"""
 import pickle
 import logging
-from typing import Deque, Tuple
+from typing import Deque, NamedTuple
 import signal
 
 import praw
 from slack_python_logging import slack_logger
+
+# pylint: disable=R0903
+class Holder(NamedTuple):
+    """holds comment and post objects"""
+    post: str
+    comment: str
 
 class RentSeeker(object):
     """crossposts /new into discussion thread"""
@@ -26,7 +32,7 @@ class RentSeeker(object):
         self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
-        self.tracked: Deque[Tuple[str, str]] = self.load()
+        self.tracked: Deque[Holder] = self.load()
         self.init_time: int = start_time()
         register_signals()
         self.logger.debug("Start time is \"%s\"", self.init_time)
@@ -41,13 +47,13 @@ class RentSeeker(object):
         os._exit(os.EX_OK)
         return
 
-    def load(self) -> Deque[Tuple[str, str]]:
+    def load(self) -> Deque[Holder]:
         """loads pickle if it exists"""
         self.logger.debug("Loading pickle file")
         try:
             with open("tracked_comments.pkl", 'rb') as pickled_file:
                 try:
-                    tracked: Deque[Tuple[str, str]] = pickle.loads(pickled_file.read())
+                    tracked: Deque[Holder] = pickle.loads(pickled_file.read())
                     self.logger.debug("Loaded pickle file")
                     self.logger.debug("Current length: %s", len(tracked))
                     if tracked.maxlen != 250:
@@ -84,7 +90,7 @@ class RentSeeker(object):
                 if post is None:
                     break
                 if  (int(post.created_utc) > self.init_time
-                     and any(item for item in self.tracked if item[0] == str(post))
+                     and any(item for item in self.tracked if item.post == str(post))
                      and filter_post(post)
                     ):
                     self.post_comment(post)
@@ -99,8 +105,7 @@ class RentSeeker(object):
             sleep(60)
 
         for reply in self.reddit.inbox.comment_replies():
-            if any(item for item in self.tracked
-                   if item[1] == str(reply.parent)):
+            if any(item for item in self.tracked if item.comment == str(reply.parent)):
                 reply.mod.remove()
                 self.logger.debug("Removed comment reply")
                 reply.mark_unread()
@@ -118,7 +123,7 @@ class RentSeeker(object):
         comment: praw.models.Comment = discussion_thread.reply(body)
         self.logger.debug("Posted comment")
 
-        self.tracked.append((str(post), str(comment)))
+        self.tracked.append(Holder(str(post), str(comment)))
         self.logger.debug("Added \"%s\" to tracked comments", comment)
         return
 
