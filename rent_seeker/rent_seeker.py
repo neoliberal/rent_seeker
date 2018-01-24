@@ -105,8 +105,8 @@ class RentSeeker(object):
                     self.logger.debug("Removed comment reply")
                     reply.mark_unread()
         except prawcore.exceptions.ServerError:
-            self.logger.error("Server error: Sleeping for 1 minute.")
-            sleep(60)
+            self.logger.error("Server error: Sleeping for 15 minutes.")
+            sleep(60 * 15)
         except prawcore.exceptions.ResponseException:
             self.logger.error("Response error: Sleeping for 1 minute.")
             sleep(60)
