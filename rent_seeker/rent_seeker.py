@@ -97,6 +97,13 @@ class RentSeeker(object):
                      and filter_post(post)
                     ):
                     self.post_comment(post)
+            for reply in self.reddit.inbox.unread():
+                if (isinstance(reply, praw.models.Comment)
+                        and any(item for item in self.tracked if item.comment == str(reply.parent()))
+                   ):
+                    reply.mod.remove()
+                    self.logger.debug("Removed comment reply")
+                    reply.mark_unread()
         except prawcore.exceptions.ServerError:
             self.logger.error("Server error: Sleeping for 1 minute.")
             sleep(60)
@@ -106,15 +113,6 @@ class RentSeeker(object):
         except prawcore.exceptions.RequestException:
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
-
-        for reply in self.reddit.inbox.unread():
-            if (isinstance(reply, praw.models.Comment)
-                    and any(item for item in self.tracked if item.comment == str(reply.parent()))
-               ):
-                reply.mod.remove()
-                self.logger.debug("Removed comment reply")
-                reply.mark_unread()
-        return
 
     def post_comment(self, post: praw.models.Submission) -> None:
         """posts comment in discussion thread"""
