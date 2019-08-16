@@ -97,13 +97,6 @@ class RentSeeker(object):
                      and filter_post(post)
                     ):
                     self.post_comment(post)
-            for reply in self.reddit.inbox.unread():
-                if (isinstance(reply, praw.models.Comment)
-                        and any(item for item in self.tracked if item.comment == str(reply.parent()))
-                   ):
-                    reply.mod.remove()
-                    self.logger.debug("Removed comment reply")
-                    reply.mark_unread()
         except prawcore.exceptions.ServerError:
             self.logger.error("Server error: Sleeping for 15 minutes.")
             sleep(60 * 15)
@@ -117,13 +110,10 @@ class RentSeeker(object):
     def post_comment(self, post: praw.models.Submission) -> None:
         """posts comment in discussion thread"""
         discussion_thread: praw.models.Submission = self._get_discussion_thread()
-        body: str = "\n\n".join([
-            f"[/new](/r/{self.subreddit}/new): [{post.title}]({post.permalink})",
-            "*Replies to this comment will be removed, please participate in the linked thread*"
-        ])
+        body: str = f"[/new](/r/{self.subreddit}/new): [{post.title}]({post.permalink})"
 
         self.logger.debug("Posting comment")
-        comment: praw.models.Comment = discussion_thread.reply(body)
+        comment: praw.models.Comment = discussion_thread.reply(body).mod.lock()
         self.logger.debug("Posted comment")
 
         self.tracked.append(Holder(str(post), str(comment)))
