@@ -1,0 +1,3 @@
+praw==6.3.1
+systemd-python==234
+git+git://github.com/neoliberal/slack_python_logging
