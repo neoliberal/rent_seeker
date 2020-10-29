@@ -29,7 +29,11 @@ class RentSeeker(object):
             """registers signals for systemd"""
             signal.signal(signal.SIGTERM, self.exit)
 
-        self.logger: logging.Logger = slack_logger.initialize("rent_seeker")
+        self.logger: logging.Logger = slack_logger.initialize(
+            app_name = "rent_seeker",
+            stream_loglevel = "INFO",
+            slack_loglevel = "CRITICAL",
+        )
         self.reddit: praw.Reddit = reddit
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
         self.tracked: Deque[Holder] = self.load()
@@ -124,7 +128,7 @@ class RentSeeker(object):
 
         self.logger.debug("Posting comment")
         comment: praw.models.Comment = discussion_thread.reply(body)
-        self.logger.debug("Posted comment")
+        self.logger.info("Posted comment %s linking to submission %s", comment, post)
 
         self.tracked.append(Holder(str(post), str(comment)))
         self.logger.debug("Added \"%s\" to tracked comments", comment)
