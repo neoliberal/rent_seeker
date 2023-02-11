@@ -2,6 +2,7 @@
 import pickle
 import logging
 from typing import Deque, NamedTuple
+import os
 import signal
 
 import praw
@@ -15,7 +16,7 @@ class Holder(NamedTuple):
 
 class RentSeeker(object):
     """crossposts /new into discussion thread"""
-    __slots__ = ["logger", "reddit", "subreddit", "init_time", "tracked"]
+    __slots__ = ["logger", "reddit", "subreddit", "init_time", "tracked", "bot_name"]
 
     def __init__(self, reddit: praw.Reddit, subreddit: str) -> None:
         """initialize rentseeker"""
@@ -35,6 +36,7 @@ class RentSeeker(object):
             slack_loglevel = "CRITICAL",
         )
         self.reddit: praw.Reddit = reddit
+        self.bot_name = os.environ['dt_bot_username']
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
         self.tracked: Deque[Holder] = self.load()
         self.init_time: int = start_time()
@@ -117,10 +119,17 @@ class RentSeeker(object):
         except prawcore.exceptions.RequestException:
             self.logger.error("Request error: Sleeping for 1 minute.")
             sleep(60)
+        # Started hitting rate limits in Feb 2022, added this to hopefully help
+        sleep(2)
 
     def post_comment(self, post: praw.models.Submission) -> None:
         """posts comment in discussion thread"""
         discussion_thread: praw.models.Submission = self._get_discussion_thread()
+        if discussion_thread is None:
+            # This tends to happen when Reddit is running slow.
+            # We haven't added the submission to tracked yet, and we've logged
+            # the error. So just exit and try again later.
+            return
         body: str = "\n\n".join([
             f"[/new](/r/{self.subreddit}/new): [{post.title}]({post.permalink})",
             "*Replies to this comment will be removed, please participate in the linked thread*"
@@ -137,8 +146,5 @@ class RentSeeker(object):
     def _get_discussion_thread(self) -> praw.models.Submission:
         """returns discussion thread"""
         self.logger.debug("Finding discussion thread")
-        for submission in self.subreddit.search("Discussion Thread", sort="new"):
-            if submission.author == self.reddit.user.me():
-                self.logger.debug("Found discussion thread")
-                return submission
+        return next(self.reddit.redditor(self.bot_name).submissions.new(limit=1))
         self.logger.error("Could not find discussion thread")
