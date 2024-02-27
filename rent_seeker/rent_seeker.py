@@ -4,6 +4,7 @@ import logging
 from typing import Deque, NamedTuple
 import os
 import signal
+import time
 
 import praw
 from slack_python_logging import slack_logger
@@ -16,7 +17,6 @@ class Holder(NamedTuple):
 
 class RentSeeker(object):
     """crossposts /new into discussion thread"""
-    __slots__ = ["logger", "reddit", "subreddit", "init_time", "tracked", "bot_name"]
 
     def __init__(self, reddit: praw.Reddit, subreddit: str) -> None:
         """initialize rentseeker"""
@@ -38,6 +38,7 @@ class RentSeeker(object):
         self.reddit: praw.Reddit = reddit
         self.bot_name = os.environ['dt_bot_username']
         self.subreddit: praw.models.Subreddit = self.reddit.subreddit(subreddit)
+        self.primary_subreddit = self.reddit.subreddit(subreddit.split("+")[0])
         self.tracked: Deque[Holder] = self.load()
         self.init_time: int = start_time()
         register_signals()
@@ -88,6 +89,13 @@ class RentSeeker(object):
         """listens to subreddit's posts"""
         def filter_post(post: praw.models.Submission) -> bool:
             """filters post based on criteria"""
+            if post.created_utc + 60 > time.time():
+                # Don't trigger on posts less than a minute old
+                # Often these are quickly deleted and resubmitted by OP
+                return False
+            if post.banned_by is not None:
+                # Don't trigger on removed threads
+                return False
             if post.title == "Discussion Thread":
                 return False
             return True
@@ -131,7 +139,7 @@ class RentSeeker(object):
             # the error. So just exit and try again later.
             return
         body: str = "\n\n".join([
-            f"[/new](/r/{self.subreddit}/new): [{post.title}]({post.permalink})",
+            f"[/new](/r/{post.subreddit.display_name}/new): [{post.title}]({post.permalink})",
             "*Replies to this comment will be removed, please participate in the linked thread*"
         ])
 

@@ -20,7 +20,7 @@ def main() -> None:
 
     bot: RentSeeker = RentSeeker(
         reddit,
-        "neoliberal"
+        "neoliberal+metaNL"
     )
 
     while True:
